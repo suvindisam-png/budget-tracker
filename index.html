@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Category Budget Progress Bars</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      max-width: 550px;
+      margin: 40px auto;
+      padding: 0 20px;
+      color: #1f2937;
+      background-color: #f9fafb;
+    }
+
+    .card {
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      margin-bottom: 16px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 8px;
+    }
+
+    .category-name {
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+
+    .amounts {
+      font-size: 0.95rem;
+      color: #4b5563;
+    }
+
+    /* Progress Bar Container */
+    .progress-track {
+      width: 100%;
+      height: 18px;
+      background-color: #e5e7eb;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 14px;
+    }
+
+    /* Progress Bar Fill */
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background-color: #10b981; /* Default Green */
+      transition: width 0.3s ease, background-color 0.3s ease;
+    }
+
+    .progress-fill.warning { background-color: #f59e0b; } /* Amber at 75%+ */
+    .progress-fill.over    { background-color: #ef4444; } /* Red at 100%+ */
+
+    /* Input Controls */
+    .controls {
+      display: flex;
+      gap: 8px;
+    }
+
+    input[type="number"] {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 0.95rem;
+    }
+
+    button {
+      padding: 8px 14px;
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    button:hover { background-color: #1d4ed8; }
+    button.reset { background-color: #6b7280; }
+    button.reset:hover { background-color: #4b5563; }
+  </style>
+</head>
+<body>
+
+  <h2>Monthly Budget Tracker</h2>
+  <div id="budget-container"></div>
+
+  <script>
+    // 1. Define your budget categories and limits here
+    const categories = [
+      { id: 'groceries', name: 'Groceries', limit: 600, spent: 240 },
+      { id: 'dining',    name: 'Dining Out', limit: 250, spent: 195 },
+      { id: 'transport', name: 'Transport & Fuel', limit: 200, spent: 80 }
+    ];
+
+    const container = document.getElementById('budget-container');
+
+    // 2. Render all categories and bars
+    function renderBudgets() {
+      container.innerHTML = '';
+
+      categories.forEach((cat, index) => {
+        const rawPercent = (cat.spent / cat.limit) * 100;
+        const barWidth = Math.min(rawPercent, 100); // Cap visual bar at 100%
+        
+        // Determine bar color based on spending threshold
+        let statusClass = '';
+        if (rawPercent >= 100) {
+          statusClass = 'over';
+        } else if (rawPercent >= 75) {
+          statusClass = 'warning';
+        }
+
+        const remaining = cat.limit - cat.spent;
+        const statusText = remaining >= 0 
+          ? `$${remaining.toFixed(2)} left` 
+          : `$${Math.abs(remaining).toFixed(2)} over budget`;
+
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <div class="header">
+            <span class="category-name">${cat.name}</span>
+            <span class="amounts">
+              <strong>$${cat.spent.toFixed(2)}</strong> / $${cat.limit.toFixed(2)} (${statusText})
+            </span>
+          </div>
+          
+          <div class="progress-track">
+            <div class="progress-fill ${statusClass}" style="width: ${barWidth}%"></div>
+          </div>
+
+          <div class="controls">
+            <input type="number" id="input-${index}" placeholder="Add expense ($)" step="0.01" min="0">
+            <button onclick="addExpense(${index})">+ Add</button>
+            <button class="reset" onclick="resetSpent(${index})">Reset</button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // 3. Add spending to a category
+    function addExpense(index) {
+      const input = document.getElementById(`input-${index}`);
+      const amount = parseFloat(input.value);
+
+      if (!isNaN(amount) && amount > 0) {
+        categories[index].spent += amount;
+        renderBudgets();
+      }
+    }
+
+    // 4. Reset spending for a new month/cycle
+    function resetSpent(index) {
+      categories[index].spent = 0;
+      renderBudgets();
+    }
+
+    // Initial render
+    renderBudgets();
+  </script>
+</body>
+</html>
